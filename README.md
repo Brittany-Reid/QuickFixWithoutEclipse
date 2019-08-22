@@ -1,5 +1,9 @@
-# quickfixwrapper
+# Quick Fix Wrapper
+Quick Fix without Eclipse
 
-The goal of this project is to detangle the Eclipse Quick Fix functionality from the IDE such that quick fix can be called on non-workspace objects. This is extremely useful for fixing code in batch. 
+Quick Fix Wrapper aims to detangles Eclipse Quick Fix functionality from the Eclipse IDE. Eclipse Quick Fixes are heavily embedded within UI, and operate on the Eclipse Workspace. This library was developed to faciliate efficient large-scale code correction.
 
-Updates to Eclipse Quickfix may break functionality. I have no intent to maintain this code. I hate eclipse. 
+Code will likely break with updates to Eclipse dependencies. 
+
+## Components
+ - EclipseCompilerWrapper, facilitates extraction of IProblems from compilation.
