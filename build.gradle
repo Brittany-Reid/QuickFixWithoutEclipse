@@ -22,7 +22,7 @@ repositories {
 
 dependencies {
     compile group: 'org.eclipse.jdt', name: 'org.eclipse.jdt.core', version: '3.18.0'
-    compile group: 'org.eclipse.jdt', name: 'ecj', version: '3.18.0'
+    implementation files('libs/ecjExtended.jar')
 
     // This dependency is used by the application.
     implementation 'com.google.guava:guava:28.0-jre'
@@ -33,5 +33,5 @@ dependencies {
 
 application {
     // Define the main class for the application
-    mainClassName = 'quickfixwrapper.Main'
+    mainClassName = 'quickfixwithouteclipse.Main'
 }
