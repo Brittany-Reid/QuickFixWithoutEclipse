@@ -9,6 +9,6 @@ I have successfully been able to extract IProblems from the Eclipse Compiler for
 
 If this refuses to work, maybe the code here can be useful to someone else.
 
-##Run instructions:
+## Run instructions:
 
 Currently ecjExtended.jar has no changes, for some reason the overwriting classes aren't giving me a security error like they did the first time I tried this so I've just been running with them loose. You may have to build twice.
