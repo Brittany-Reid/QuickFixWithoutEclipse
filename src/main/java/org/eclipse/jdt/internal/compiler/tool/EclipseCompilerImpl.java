@@ -78,7 +78,7 @@ public class EclipseCompilerImpl extends Main {
 	protected Processor[] processors;
 	public DiagnosticListener<? super JavaFileObject> diagnosticListener;
 	public CompilationResult cr = null;
-	public List<IProblem> problems= new ArrayList<>();
+	public List<IProblem> problems;
 	public IProblem problemExtended = null;
 
 	public EclipseCompilerImpl(PrintWriter out, PrintWriter err, boolean systemExitWhenFinished) {
@@ -86,6 +86,8 @@ public class EclipseCompilerImpl extends Main {
 	}
 
 	public boolean call() {
+		//initialize problem holder every compilation call
+		problems = new ArrayList<>();
 		try {
 			handleLocations();
 			if (this.proceed) {

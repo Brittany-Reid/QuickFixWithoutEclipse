@@ -8,7 +8,3 @@ Running a single quickfix on a file.
 I have successfully been able to extract IProblems from the Eclipse Compiler for Java, which is a crucial first step. Unfortunately the only viable method for this is modifying the eclipse libraries. In the process of modifying EclipseCompilerImpl and EclipseCompiler, I have also removed some code that prevents in-memory compilation.
 
 If this refuses to work, maybe the code here can be useful to someone else.
-
-## Run instructions:
-
-Currently ecjExtended.jar has no changes, for some reason the overwriting classes aren't giving me a security error like they did the first time I tried this so I've just been running with them loose. You may have to build twice.

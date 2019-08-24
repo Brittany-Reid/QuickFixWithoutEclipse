@@ -21,7 +21,17 @@ repositories {
 }
 
 dependencies {
+    implementation files('libs/org.eclipse.swt-3.111.0.jar')
+    implementation files('libs/org.eclipse.ltk.core.refactoring-3.10.100.jar')
+    implementation files('libs/org.eclipse.ltk.ui.refactoring-3.9.400.jar')
+    implementation files('libs/org.eclipse.jdt.ui-3.18.0.jar')
     compile group: 'org.eclipse.jdt', name: 'org.eclipse.jdt.core', version: '3.18.0'
+    compile group: 'org.eclipse.platform', name: 'org.eclipse.core.resources', version: '3.13.400'
+    compile group: 'org.eclipse.platform', name: 'org.eclipse.core.expressions', version: '3.6.400'
+    compile group: 'org.eclipse.platform', name: 'org.eclipse.core.filesystem', version: '1.7.400'
+    compile group: 'org.eclipse.jdt', name: 'org.eclipse.jdt.core.manipulation', version: '1.11.200'
+    compile group: 'org.eclipse.jdt', name: 'org.eclipse.jdt.launching', version: '3.14.0'
+    compile group: 'org.eclipse.platform', name: 'org.eclipse.core.variables', version: '3.4.500'
     implementation files('libs/ecjExtended.jar')
 
     // This dependency is used by the application.
