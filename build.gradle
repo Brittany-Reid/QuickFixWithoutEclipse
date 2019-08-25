@@ -25,13 +25,30 @@ dependencies {
     implementation files('libs/org.eclipse.ltk.core.refactoring-3.10.100.jar')
     implementation files('libs/org.eclipse.ltk.ui.refactoring-3.9.400.jar')
     implementation files('libs/org.eclipse.jdt.ui-3.18.0.jar')
-    compile group: 'org.eclipse.jdt', name: 'org.eclipse.jdt.core', version: '3.18.0'
-    compile group: 'org.eclipse.platform', name: 'org.eclipse.core.resources', version: '3.13.400'
-    compile group: 'org.eclipse.platform', name: 'org.eclipse.core.expressions', version: '3.6.400'
+    implementation files('libs/org.eclipse.jdt.core.manipulation_1.12.100.v20190816-1501.jar')
+    implementation files('libs/org.eclipse.jdt.core_3.19.0.v20190710-0739.jar')
+    implementation files('libs/org.eclipse.core.runtime-3.15.300.jar')
+    implementation files('libs/org.eclipse.core.resources-3.13.400.jar')
+    implementation files('libs/org.eclipse.core.expressions-3.6.400.jar')
+    implementation files('libs/org.eclipse.core.jobs-3.10.400.jar')
+    implementation files('libs/org.eclipse.equinox.common-3.10.400.jar')
+    compile group: 'org.eclipse.platform', name: 'org.eclipse.osgi', version: '3.14.0'
     compile group: 'org.eclipse.platform', name: 'org.eclipse.core.filesystem', version: '1.7.400'
-    compile group: 'org.eclipse.jdt', name: 'org.eclipse.jdt.core.manipulation', version: '1.11.200'
-    compile group: 'org.eclipse.jdt', name: 'org.eclipse.jdt.launching', version: '3.14.0'
-    compile group: 'org.eclipse.platform', name: 'org.eclipse.core.variables', version: '3.4.500'
+    compile group: 'org.osgi', name: 'org.osgi.service.prefs', version: '1.1.1'
+    compile group: 'org.eclipse.platform', name: 'org.eclipse.core.filesystem', version: '1.7.400'
+    compile group: 'org.eclipse.platform', name: 'org.eclipse.osgi', version: '3.14.0'
+    compile group: 'org.eclipse.platform', name: 'org.eclipse.equinox.registry', version: '3.8.400'
+    compile group: 'org.eclipse.platform', name: 'org.eclipse.text', version: '3.8.200'
+    compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.9'
+    compile group: 'commons-io', name: 'commons-io', version: '2.6'
+
+
+
+
+
+
+
+    
     implementation files('libs/ecjExtended.jar')
 
     // This dependency is used by the application.
