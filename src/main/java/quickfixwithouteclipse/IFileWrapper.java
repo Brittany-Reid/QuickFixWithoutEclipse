@@ -13,7 +13,7 @@ import java.nio.charset.StandardCharsets;
 import org.eclipse.core.runtime.Path;
 
 /**
- * An IFileWrapper is an extension of IFile that is actually just a string.
+ * Dummy extension of IFile/File that isn't connected to a Workspace.
  */
 public class IFileWrapper extends File{
     String contents;
@@ -36,6 +36,16 @@ public class IFileWrapper extends File{
         catch(Exception e){
             e.printStackTrace();
         }
+    }
+
+    @Override
+    public String getFileExtension(){
+        return ".java";
+    }
+
+    @Override
+    public String toString(){
+        return contents;
     }
 
 }
