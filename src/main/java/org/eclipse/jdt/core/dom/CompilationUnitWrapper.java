@@ -13,18 +13,37 @@ import org.eclipse.jdt.core.ITypeRoot;
 @SuppressWarnings({ "rawtypes", "unchecked" })
 public class CompilationUnitWrapper extends CompilationUnit{
     ICompilationUnitWrapper icu = null;
-    CompilationUnit inner;
 
+    /**
+     * Default constructor, creates an empty ICompilationUnit. 
+     * Use the copy constructor instead.
+     * @param ast
+     */
     public CompilationUnitWrapper(AST ast){
         super(ast);
         icu = new ICompilationUnitWrapper(null, null, null);
     }
 
-    public CompilationUnitWrapper(CompilationUnit cu){
-        super(cu.getAST());
-        inner = cu;
-        icu = new ICompilationUnitWrapper(null, null, null);
-        icu.setSource(inner.toString());
+    /**
+     * Copy Constructor
+     */
+    public CompilationUnitWrapper(CompilationUnit original){
+        this(original.getAST());
+        copy(original);
+    }
+
+    /**
+     * Function to copy from a CompilationUnit.
+     * Copied from CompilationUnit.clone0
+     * @param original The original CompilationUnit to copy.
+     */
+    public void copy(CompilationUnit original){
+        setSourceRange(original.getStartPosition(), original.getLength());
+        setModule((ModuleDeclaration) ASTNode.copySubtree(original.getAST(), original.getModule()));
+        setPackage((PackageDeclaration) ASTNode.copySubtree(original.getAST(), original.getPackage()));
+		imports().addAll(ASTNode.copySubtrees(original.getAST(), original.imports()));
+        types().addAll(ASTNode.copySubtrees(original.getAST(), original.types()));
+        updateSource(); //now the ast has been copied, update all source connections
     }
 
     public void updateSource(){

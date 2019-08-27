@@ -70,3 +70,10 @@ application {
     // Define the main class for the application
     mainClassName = 'quickfixwithouteclipse.Main'
 }
+allprojects {
+    gradle.projectsEvaluated {
+        tasks.withType(JavaCompile) {
+            options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
+        }
+    }
+}
