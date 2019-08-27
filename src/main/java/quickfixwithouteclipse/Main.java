@@ -15,6 +15,7 @@ import org.eclipse.jdt.core.compiler.IProblem;
 import org.eclipse.jdt.internal.compiler.IProblemFactory;
 import org.eclipse.jdt.internal.compiler.tool.EclipseCompiler;
 import org.eclipse.jdt.internal.compiler.tool.EclipseCompilerImpl;
+import org.eclipse.jdt.internal.core.util.SimpleDocument;
 import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.CompilationUnitWrapper;
@@ -39,8 +40,11 @@ import org.eclipse.jdt.internal.corext.dom.ASTNodes;
 import org.eclipse.jdt.internal.corext.fix.FixMessages;
 import org.eclipse.text.edits.MultiTextEdit;
 import org.eclipse.text.edits.TextEditGroup;
+import org.eclipse.text.edits.TextEditProcessor;
 import org.eclipse.ltk.core.refactoring.GroupCategorySet;
 import org.eclipse.ltk.core.refactoring.GroupCategory;
+import org.eclipse.jface.text.IDocument;
+import org.eclipse.jdt.core.dom.ICompilationUnitWrapper;
 
 /**
  * Main class
@@ -147,7 +151,9 @@ public class Main{
             CompilationUnitChange change = fix.createChange(null);
             //System.out.println(change.getCompilationUnit().getSource());
             CUCorrectionProposal proposal = new CUCorrectionProposal(change.getName(), CodeActionKind.QuickFix, change.getCompilationUnit(), change, IProposalRelevance.REMOVE_UNUSED_IMPORT);
-            //proposal.apply();
+            //proposal.getTextChange();
+            //System.out.println(change.getEdit().getChildren().length);
+            applyProposal(proposal);
         }catch(Exception e){
             e.printStackTrace();
         }
@@ -157,4 +163,30 @@ public class Main{
 
         // //IProblemFactory pf = new EclipseCompilerImpl(null, null, null).getProblemFactory();
     }
+
+    public static void applyProposal(CUCorrectionProposal proposal){
+        CompilationUnitChange change;
+        try{
+            change = (CompilationUnitChange)proposal.getChange();
+        }catch (Exception e){
+            e.printStackTrace();
+            return;
+        }
+        TextEdit textEdit = change.getEdit();
+        ICompilationUnitWrapper icu = (ICompilationUnitWrapper)change.getCompilationUnit();
+        IDocument document = icu.getDocument();
+
+        TextEditProcessor processor = new TextEditProcessor(document, textEdit, TextEdit.NONE);
+        try{
+            processor.performEdits();
+        }catch (Exception e){
+            e.printStackTrace();
+            return;
+        }
+        System.out.println(document.get());
+        //TextEditWrapper.traverseUpdate(textEdit, document);
+
+    }
+
+
 }

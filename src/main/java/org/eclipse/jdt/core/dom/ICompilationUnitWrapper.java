@@ -9,14 +9,20 @@ import quickfixwithouteclipse.IFileWrapper;
 import org.eclipse.jdt.core.IBuffer;
 import quickfixwithouteclipse.*;
 import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.internal.core.util.SimpleDocument;
+import org.eclipse.jface.text.IDocument;
 
 /**
  * An ICompilation Unit that returns a custom IFile.
  */
-class ICompilationUnitWrapper extends CompilationUnit{
+public class ICompilationUnitWrapper extends CompilationUnit{
     IJavaProject project;
     IFileWrapper file;
     IBuffer buffer;
+    boolean workingCopy = false;
+    SimpleDocument doc;
 
     public ICompilationUnitWrapper(PackageFragment parent, String name, WorkingCopyOwner owner){
         super(parent, name, owner);
@@ -26,6 +32,16 @@ class ICompilationUnitWrapper extends CompilationUnit{
     public void setSource(String contents){
         file = new IFileWrapper(contents);
         buffer = new IBufferWrapper(file, null, false);
+        doc = new SimpleDocument(contents);
+    }
+
+    @Override
+    public void becomeWorkingCopy(IProgressMonitor monitor) throws JavaModelException {
+       workingCopy = true;
+    }
+
+    public boolean isWorkingCopy() {
+        return workingCopy;
     }
 
     @Override
@@ -41,5 +57,14 @@ class ICompilationUnitWrapper extends CompilationUnit{
     @Override
     public IJavaProject getJavaProject(){
         return project;
+    }
+
+    public IDocument getDocument(){
+        return doc;
+    }
+
+    @Override
+    public String toString(){
+        return file.toString();
     }
 }
