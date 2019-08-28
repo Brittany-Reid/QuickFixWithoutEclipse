@@ -57,9 +57,10 @@ public class Main{
 
         //this is the string we want to compile
         String code = "import java.util.List;\n"
-        //+ "import java.util.ArrayList;\n"
+        + "import java.util.ArrayList;\n"
         + "class Test{\n"
         + "int i=0;\n"
+        + "//File file;\n"
         + "}\n";
 
         File file = new File("Test.java");
@@ -77,7 +78,7 @@ public class Main{
             return;
         }
 
-        code = QuickFix.run(file);
+        code = QuickFix.fixAll(file, new EclipseCompiler());
         
         System.out.println(code);
     }

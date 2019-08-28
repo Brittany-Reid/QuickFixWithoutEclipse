@@ -7,85 +7,121 @@ import org.eclipse.jdt.core.refactoring.CompilationUnitChange;
 import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.AST;
+import org.apache.commons.io.output.NullOutputStream;
+import org.eclipse.jdt.core.ICompilationUnit;
+import org.eclipse.jdt.core.IOpenable;
+import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.compiler.IProblem;
 import org.eclipse.jdt.internal.compiler.tool.EclipseCompiler;
 import org.eclipse.jdt.internal.ui.text.correction.ProblemLocation;
 import org.eclipse.jdt.ls.core.internal.corrections.proposals.CUCorrectionProposal;
 import org.eclipse.jdt.ls.core.internal.corrections.proposals.ChangeCorrectionProposal;
 import org.eclipse.jface.text.IDocument;
+import org.eclipse.text.edits.MultiTextEdit;
 import org.eclipse.text.edits.TextEdit;
 import org.eclipse.text.edits.TextEditProcessor;
+import org.eclipse.jdt.ls.core.internal.corrections.DiagnosticsHelper;
+import org.eclipse.jdt.ls.core.internal.corrections.InnovationContext;
 
 import javax.tools.DiagnosticCollector;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.JavaCompiler.CompilationTask;
+import javax.tools.JavaCompiler;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.lang.Iterable;
 import java.util.List;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.io.File;
 import java.util.ArrayList;
+import org.eclipse.lsp4j.Range;
+import org.eclipse.jdt.ls.core.internal.JDTUtils;
 
 /**
  * Public class containing functions to preform quickfix.
  */
 public class QuickFix{
-    
+
     /**
-     * Runs quickfix on a given File. The File will be compiled on disk.
-     * Use the other run function if you have a custom compiler.
-     * @param code The File containing code to fix.
-     * @return The fixed String.
+     * This is an example of how to run multiple quickfixes using a given compiler.
+     * Successive compiles like this are better suited to in-memory compilation.
+     * The compiler needs to be an EclipseCompiler in order to extract
+     * IProblems.
+     * @return The fixed string.
      */
-    public static String run(File code){
-        //set up compiler
-        EclipseCompiler compiler = new EclipseCompiler();
-        DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<JavaFileObject>();
-        StandardJavaFileManager fileManager = compiler.getStandardFileManager(diagnostics, null, null);
-        Iterable<? extends JavaFileObject> compilationUnits = fileManager.getJavaFileObjects(code);
-        CompilationTask task = compiler.getTask(null, fileManager, diagnostics, null, null, compilationUnits);
+    public static String fixAll(File code, JavaCompiler compiler){
+        int runs = 1;
+        if(!(compiler instanceof EclipseCompiler)) return null;
+        String contents = null;
 
-        //compile
-        task.call();
-        //get iproblems
-        List<IProblem> problems = compiler.getIProblems();
+        for(int i=0; i<runs; i++){
+            contents = readFile(code);
+            if(contents == null) return null;
 
-        //get string
-        String contents = readFile(code);
-        if(contents == null) return null;
+            System.out.println(contents);
 
-        //defer to other run function
-        return run(contents, problems);
-    }
+            //compile
+            DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<JavaFileObject>();
+            StandardJavaFileManager fileManager = compiler.getStandardFileManager(diagnostics, null, null);
+            Iterable<? extends JavaFileObject> compilationUnits = fileManager.getJavaFileObjects(code);
+            //eclipse compiler does not respect null writer
+            Writer out = new OutputStreamWriter(new NullOutputStream());
+            CompilationTask task = compiler.getTask(out, fileManager, diagnostics, null, null, compilationUnits);
+            task.call();
+
+            //get iproblems
+            EclipseCompiler ec = (EclipseCompiler)compiler;
+            List<IProblem> problems = ec.getIProblems();
+            runs = problems.size();
+
+            contents = run(contents, problems);
+
+            //write to file
+            code = writeTo(code, contents);
+        }
+
+        return contents;
+    }  
 
     /**
      * Runs quickfix on a given string given a list of IProblems.
-     * Allows IProblems to be provided from previous compiles/custom compiler setup.
      * @param code The String code to fix
      * @param problems A String Array of problems.
      * @return The fixed String.
+     * @throws JavaModelException
      */
     public static String run(String code, List<IProblem> problems){
         //construct our compilationunit
         CompilationUnitWrapper compilationUnit = constructCompilationUnit(code);
 
-        //get a list of problemLocations
-        List<ProblemLocation> locations = new ArrayList<>();
-        for(IProblem problem : problems){
-            locations.add(new ProblemLocation(problem));
-        }
-
-        List<ChangeCorrectionProposal> proposals = CodeActionHandler.getProposals(locations, compilationUnit);
-
-        for(ChangeCorrectionProposal proposal : proposals){
-            IDocument document = applyProposal(proposal);
-            code = document.get();
-        }
+        code = processProblem(problems.get(0), compilationUnit);
 
         return code;
+    }
+
+    public static String processProblem(IProblem problem, CompilationUnit compilationUnit){
+        List<ProblemLocation> locations = new ArrayList<>();
+        locations.add(new ProblemLocation(problem));
+
+        InnovationContext context = null;
+        try{
+            Range range = JDTUtils.toRange((IOpenable)compilationUnit.getJavaElement(), problem.getSourceStart(), 0);
+            int start = DiagnosticsHelper.getStartOffset((ICompilationUnit) compilationUnit.getJavaElement(), range);
+            int end = DiagnosticsHelper.getEndOffset((ICompilationUnit) compilationUnit.getJavaElement(), range);
+            context = new InnovationContext((ICompilationUnit) compilationUnit.getJavaElement(), start, end - start);
+            context.setASTRoot(compilationUnit);
+        } catch(Exception e){
+            e.printStackTrace();
+        }
+        List<ChangeCorrectionProposal> proposals = CodeActionHandler.getProposals(locations, context);
+
+        IDocument document = applyProposal(proposals.get(0));
+        return document.get();
     }
 
     /**
@@ -131,7 +167,6 @@ public class QuickFix{
         TextEdit textEdit = change.getEdit();
         ICompilationUnitWrapper icu = (ICompilationUnitWrapper)change.getCompilationUnit();
         IDocument document = icu.getDocument();
-
         TextEditProcessor processor = new TextEditProcessor(document, textEdit, TextEdit.NONE);
         try{
             processor.performEdits();
@@ -157,7 +192,7 @@ public class QuickFix{
 
             String line = null;
             while((line = input.readLine()) != null){
-                contents += line;
+                contents += line +"\n";
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -174,4 +209,21 @@ public class QuickFix{
 
         return contents;
     }
+
+    private static File writeTo(File file, String contents){
+        Writer w;
+        try{
+            if (!file.exists()) {
+                file.createNewFile();
+            }
+
+            w = new FileWriter(file);
+            w.write(contents);
+            w.close();
+        } catch (Exception e){
+            e.printStackTrace();
+            return null;
+        }
+        return file;
+    }   
 }
