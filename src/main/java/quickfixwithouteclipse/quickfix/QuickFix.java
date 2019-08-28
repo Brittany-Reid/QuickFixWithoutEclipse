@@ -10,6 +10,7 @@ import org.eclipse.jdt.core.dom.AST;
 import org.apache.commons.io.output.NullOutputStream;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IOpenable;
+import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.compiler.IProblem;
 import org.eclipse.jdt.internal.compiler.tool.EclipseCompiler;
@@ -34,6 +35,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.lang.Iterable;
 import java.util.List;
+import java.util.Map;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
@@ -63,7 +65,12 @@ public class QuickFix{
             contents = readFile(code);
             if(contents == null) return null;
 
+            //parsing removes comments, for now we have to parse before compiling so the offsets dont change
+            CompilationUnit cu = constructCompilationUnit(contents);
+            contents = cu.toString();
+
             System.out.println(contents);
+            code = writeTo(code, contents);
 
             //compile
             DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<JavaFileObject>();
@@ -137,7 +144,9 @@ public class QuickFix{
         parser.setEnvironment(null, null, null, true);
         parser.setSource(code.toCharArray());
         parser.setUnitName(null);
-
+        Map options = JavaCore.getOptions();
+        options.put(JavaCore.COMPILER_DOC_COMMENT_SUPPORT, JavaCore.ENABLED);
+        parser.setCompilerOptions(options);
         //parse
         ASTNode astNode = parser.createAST(null);
 

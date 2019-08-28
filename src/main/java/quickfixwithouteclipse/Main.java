@@ -56,7 +56,7 @@ public class Main{
     public static void main(String[] args) throws Exception{
 
         //this is the string we want to compile
-        String code = "import java.util.List;\n"
+        String code = "//import java.util.List;\n"
         + "import java.util.ArrayList;\n"
         + "class Test{\n"
         + "int i=0;\n"
