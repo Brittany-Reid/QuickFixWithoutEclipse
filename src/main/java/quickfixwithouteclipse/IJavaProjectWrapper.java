@@ -1,11 +1,15 @@
 package quickfixwithouteclipse;
 
 import org.eclipse.jdt.internal.core.JavaProject;
+import org.eclipse.jdt.internal.core.SearchableEnvironment;
+
 import java.util.Map;
 
 import org.eclipse.jdt.core.IClasspathEntry;
+import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.core.WorkingCopyOwner;
 
 public class IJavaProjectWrapper extends JavaProject{
 
@@ -33,5 +37,10 @@ public class IJavaProjectWrapper extends JavaProject{
     public IClasspathEntry[] getResolvedClasspath(boolean ignoreUnresolvedEntry) throws JavaModelException {
         return new IClasspathEntry[0];
     }
+
+    @Override
+    public SearchableEnvironment newSearchableNameEnvironment(WorkingCopyOwner owner, boolean excludeTestCode) throws JavaModelException {
+		return new SearchableEnvironment(this, owner, excludeTestCode);
+	}
 
 }

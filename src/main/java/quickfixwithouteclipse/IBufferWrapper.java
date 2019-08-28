@@ -30,4 +30,9 @@ public class IBufferWrapper extends Buffer{
         return this.contents;
     }
 
+    @Override
+    public int getLength(){
+        return contents.length;
+    }
+
 }

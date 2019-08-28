@@ -86,10 +86,11 @@ public class QuickFix{
             List<IProblem> problems = ec.getIProblems();
             runs = problems.size();
 
-            contents = run(contents, problems);
-
-            //write to file
-            code = writeTo(code, contents);
+            String newContents = run(contents, problems);
+            if(newContents != null){
+                contents = newContents;
+                code = writeTo(code, contents);
+            }
         }
 
         return contents;
@@ -107,6 +108,7 @@ public class QuickFix{
         CompilationUnitWrapper compilationUnit = constructCompilationUnit(code);
 
         code = processProblem(problems.get(0), compilationUnit);
+
 
         return code;
     }
@@ -126,7 +128,7 @@ public class QuickFix{
             e.printStackTrace();
         }
         List<ChangeCorrectionProposal> proposals = CodeActionHandler.getProposals(locations, context);
-
+        if(proposals == null || proposals.size() < 1) return null;
         IDocument document = applyProposal(proposals.get(0));
         return document.get();
     }
