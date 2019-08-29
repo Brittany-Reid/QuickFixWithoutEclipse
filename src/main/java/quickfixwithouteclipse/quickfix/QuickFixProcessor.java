@@ -51,8 +51,7 @@ public class QuickFixProcessor{
             case IProblem.UnusedImport:
                 // bug with getting import declarations, second dec returns the entire statment?
                 IProposableFix fix = UnusedCodeFixCore.createRemoveUnusedImportFix(cu.getASTRoot(), problem);
-                //ASTNode selected = problem.getCoveredNode(cu.getASTRoot());
-                //System.out.println(selected.toString());
+                if(fix == null) return;
                 CompilationUnitChange change = null;
                 try{
                     change = fix.createChange(null);

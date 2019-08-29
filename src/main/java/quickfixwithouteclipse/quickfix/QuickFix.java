@@ -8,12 +8,12 @@ import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.AST;
 import org.apache.commons.io.output.NullOutputStream;
+import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IOpenable;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.compiler.IProblem;
-import org.eclipse.jdt.internal.compiler.tool.EclipseCompiler;
 import org.eclipse.jdt.internal.ui.text.correction.ProblemLocation;
 import org.eclipse.jdt.ls.core.internal.corrections.proposals.CUCorrectionProposal;
 import org.eclipse.jdt.ls.core.internal.corrections.proposals.ChangeCorrectionProposal;
@@ -41,6 +41,8 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
+
 import org.eclipse.lsp4j.Range;
 import org.eclipse.jdt.ls.core.internal.JDTUtils;
 
@@ -48,52 +50,47 @@ import org.eclipse.jdt.ls.core.internal.JDTUtils;
  * Public class containing functions to preform quickfix.
  */
 public class QuickFix{
+    public static String classpath = "";
+    public static String fileName = "default.java";
 
     /**
-     * This is an example of how to run multiple quickfixes using a given compiler.
-     * Successive compiles like this are better suited to in-memory compilation.
-     * The compiler needs to be an EclipseCompiler in order to extract
-     * IProblems.
+     * Attempt to fix all errors.
      * @return The fixed string.
      */
-    public static String fixAll(File code, JavaCompiler compiler){
+    public static String fixAll(String code){
         int runs = 1;
-        if(!(compiler instanceof EclipseCompiler)) return null;
-        String contents = null;
+        boolean setRuns = false;
+
+        //parsing removes comments, so lets pre-parse
+        //even using the parser to create iproblems, this persists
+        CompilationUnit cu;
+        //CompilationUnit cu = constructCompilationUnit(code);
+        //code = cu.toString();
 
         for(int i=0; i<runs; i++){
-            contents = readFile(code);
-            if(contents == null) return null;
 
-            //parsing removes comments, for now we have to parse before compiling so the offsets dont change
-            CompilationUnit cu = constructCompilationUnit(contents);
-            contents = cu.toString();
+            System.out.println(code);
 
-            System.out.println(contents);
-            code = writeTo(code, contents);
+            //construct our ast
+            cu = constructCompilationUnit(code);
 
-            //compile
-            DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<JavaFileObject>();
-            StandardJavaFileManager fileManager = compiler.getStandardFileManager(diagnostics, null, null);
-            Iterable<? extends JavaFileObject> compilationUnits = fileManager.getJavaFileObjects(code);
-            //eclipse compiler does not respect null writer
-            Writer out = new OutputStreamWriter(new NullOutputStream());
-            CompilationTask task = compiler.getTask(out, fileManager, diagnostics, null, null, compilationUnits);
-            task.call();
+            //get iproblems from parser
+            List<IProblem> problems = Arrays.asList(cu.getProblems());
+            
+            //on first run, set the number of runs
+            if(!setRuns){
+                setRuns = true;
+                runs = problems.size();
+            }
 
-            //get iproblems
-            EclipseCompiler ec = (EclipseCompiler)compiler;
-            List<IProblem> problems = ec.getIProblems();
-            runs = problems.size();
-
-            String newContents = run(contents, problems);
+            //attempt to get a correction
+            String newContents = run(code, problems, cu);
             if(newContents != null){
-                contents = newContents;
-                code = writeTo(code, contents);
+                code = newContents;
             }
         }
 
-        return contents;
+        return code;
     }  
 
     /**
@@ -103,12 +100,9 @@ public class QuickFix{
      * @return The fixed String.
      * @throws JavaModelException
      */
-    public static String run(String code, List<IProblem> problems){
-        //construct our compilationunit
-        CompilationUnitWrapper compilationUnit = constructCompilationUnit(code);
+    public static String run(String code, List<IProblem> problems, CompilationUnit compilationUnit){
 
         code = processProblem(problems.get(0), compilationUnit);
-
 
         return code;
     }
@@ -137,27 +131,19 @@ public class QuickFix{
      *  Constructs a CompilationUnitWrapper using the Eclipse ASTParser.
      */
     private static CompilationUnitWrapper constructCompilationUnit(String code){
-        //settings
+        //set up our parser
         ASTParser parser = ASTParser.newParser(AST.JLS11);
-        parser.setResolveBindings(true);
-        parser.setStatementsRecovery(true);
-        parser.setBindingsRecovery(true);
-        parser.setKind(ASTParser.K_COMPILATION_UNIT);
-        parser.setEnvironment(null, null, null, true);
         parser.setSource(code.toCharArray());
-        parser.setUnitName(null);
-        Map options = JavaCore.getOptions();
-        options.put(JavaCore.COMPILER_DOC_COMMENT_SUPPORT, JavaCore.ENABLED);
+        Map<String, String> options = JavaCore.getOptions();
+        options.put("org.eclipse.jdt.core.compiler.source", "1.11");
         parser.setCompilerOptions(options);
-        //parse
-        ASTNode astNode = parser.createAST(null);
-
-        //convert to compilation unit
-        CompilationUnit compilationUnit = (CompilationUnit) astNode;
-
-        //then to our custom object
-        CompilationUnitWrapper cuWrapper = new CompilationUnitWrapper(compilationUnit);
-
+        parser.setKind(ASTParser.K_COMPILATION_UNIT);
+        parser.setUnitName(fileName);
+        parser.setEnvironment(new String[] { classpath != null? classpath : "" },
+                new String[] { "" }, new String[] { "UTF-8" }, true);
+        parser.setResolveBindings(true);
+        CompilationUnit compilationUnit = (CompilationUnit) parser.createAST(null);
+        CompilationUnitWrapper cuWrapper = new CompilationUnitWrapper(compilationUnit, code);
         return cuWrapper;
     }
 
@@ -178,6 +164,7 @@ public class QuickFix{
         TextEdit textEdit = change.getEdit();
         ICompilationUnitWrapper icu = (ICompilationUnitWrapper)change.getCompilationUnit();
         IDocument document = icu.getDocument();
+        
         TextEditProcessor processor = new TextEditProcessor(document, textEdit, TextEdit.NONE);
         try{
             processor.performEdits();
@@ -188,53 +175,4 @@ public class QuickFix{
 
         return document;
     }
-
-    /**
-     * Private utility function to read a file into a string.
-     * @param file The file to read from.
-     * @return String contents of the file. Null if there was an exception.
-     */
-    private static String readFile(File file){
-        String contents = "";
-        BufferedReader input = null;
-
-        try {
-            input = new BufferedReader(new FileReader(file));
-
-            String line = null;
-            while((line = input.readLine()) != null){
-                contents += line +"\n";
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
-        } finally {
-            try {
-                if (input != null)
-                    input.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-                return null;
-            }
-        }
-
-        return contents;
-    }
-
-    private static File writeTo(File file, String contents){
-        Writer w;
-        try{
-            if (!file.exists()) {
-                file.createNewFile();
-            }
-
-            w = new FileWriter(file);
-            w.write(contents);
-            w.close();
-        } catch (Exception e){
-            e.printStackTrace();
-            return null;
-        }
-        return file;
-    }   
 }

@@ -1,21 +1,22 @@
 # Quick Fix Without Eclipse
 
-This is a work in progress to enable the running of quickfix in the background vs only on an open file in Eclipse. The main goal is to detangle Eclipse Quick Fix functionality from the Eclipse IDE. Eclipse Quick Fixes are heavily embedded within UI, and operate on an open file in the workspace. This is not optimal for any large-scale code correction.
+This is a work in progress to enable the running of Eclipse quickfix and similar code correction tools outside of active workspace objects. For large-scale code quality improvement, it is not optimal to be restriced to successive calls on a UI. 
 
-A hypothetical implementation of large-scale code correction through an eclipse plug-in would require inserting code into a file in eclipse, running quickfix programatically somehow, then saving the new, corrected code into a String before repeating this process for all code we want to correct.
+By removing this dependency, quickfix functionality should be able to run even outside of Eclipse. This project exists solely for my own purposes so if I can run these on strings in the background of an eclipse plug-in, I am happy (so this may end up being less Quick Fix without Eclipse, and more Programmatic Quickfix). 
 
-The proposed idea is instead to run quickfix on non-workspace objects, which should mean being able to call this functionality even outside of eclipse.
+# Quick Fixes
 
-## Current Goal
-In order to test the viability of this project, the current goal is to be able to run a single quickfix on a file. We must be able to generate the compatible objects for eclipse quickfix through compilation. 
+Removing unused import statements has been successfully implemented. 
 
-I have successfully been able to extract IProblems from the Eclipse Compiler for Java, which is a crucial first step. Unfortunately the only viable method for this is modifying the eclipse libraries. In the process of modifying EclipseCompilerImpl and EclipseCompiler, I have also removed some code that prevents in-memory compilation.
+I would really like to get undefined Types working, or at least some access to how Eclipse finds potentional import statements.
 
-Looking into a specific fix, it appears that the code for regular quickfix works on workspace objects, and that detangling this would be a large amount of work. However, there is quickfix functionality called from eclipse.jdt.ls, the language server used by other IDE plug-ins that doesn't appear to require workspace objects in a way that can't be avoided. This is the current path of investigation.
+# Current Issues
 
-Currently in order to use the functionality from eclipse.jdt.ls, I have to create extended CompilationUnit, ICompilationUnit and IFile objects. Some of these objects need to be in the same package as their super classes. It looks like getting this working is going to be extremely hacky. Currently the benefits of getting this working outweigh the downsides of the necessary implementation, but if things get too complicated it's probably less effort to just rewrite a couple of the important fixes based on the eclipse code.
+Getting IProblems has been resolved, for some undisclosed reason the current parser code can be used to extract IProblems were previously this would fail. This means no more hacked-on getProblems() function in ECJ, which 50% of the time raised an error in gradle during build, and 100% of the time raised an error in the Eclipse Plug-in I want to use this in.
 
-If this refuses to work, maybe the code here can be useful to someone else.
+Constructing a dummy JavaProject that will allow for finding imports seems difficult, for my own purposes it might just be enough to get a real JavaProject within my plug-in.
+
+I've had to do terrible things to get this much working. Even if this goes no where for me, I hope this code can help someone else! 
 
 ## Resouces
 

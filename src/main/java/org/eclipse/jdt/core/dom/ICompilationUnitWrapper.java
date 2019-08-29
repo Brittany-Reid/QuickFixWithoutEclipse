@@ -4,14 +4,26 @@ import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.internal.core.CompilationUnit;
 import org.eclipse.jdt.internal.core.PackageFragment;
 import org.eclipse.jdt.core.WorkingCopyOwner;
+
+import java.util.ArrayList;
+
+import org.eclipse.core.internal.registry.RegistryProviderFactory;
+import org.eclipse.core.internal.registry.osgi.RegistryProviderOSGI;
 import org.eclipse.core.resources.IFile;
 import quickfixwithouteclipse.IFileWrapper;
 import org.eclipse.jdt.core.IBuffer;
+import org.eclipse.jdt.core.IClasspathEntry;
+
 import quickfixwithouteclipse.*;
 import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.spi.IRegistryProvider;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.internal.core.util.SimpleDocument;
+import org.eclipse.jdt.launching.IVMInstall;
+import org.eclipse.jdt.launching.JavaRuntime;
+import org.eclipse.jdt.launching.LibraryLocation;
 import org.eclipse.jface.text.IDocument;
 
 /**
@@ -27,6 +39,7 @@ public class ICompilationUnitWrapper extends CompilationUnit{
     public ICompilationUnitWrapper(PackageFragment parent, String name, WorkingCopyOwner owner){
         super(parent, name, owner);
         project = new IJavaProjectWrapper();
+
     }
 
     public void setSource(String contents){

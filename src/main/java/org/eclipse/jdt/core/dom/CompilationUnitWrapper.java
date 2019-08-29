@@ -27,27 +27,29 @@ public class CompilationUnitWrapper extends CompilationUnit{
     /**
      * Copy Constructor
      */
-    public CompilationUnitWrapper(CompilationUnit original){
+    public CompilationUnitWrapper(CompilationUnit original, String source){
         this(original.getAST());
-        copy(original);
+        copy(original, source);
     }
 
     /**
      * Function to copy from a CompilationUnit.
      * Copied from CompilationUnit.clone0
      * @param original The original CompilationUnit to copy.
+     * @param source The string source, so we can maintain comments.
      */
-    public void copy(CompilationUnit original){
+    public void copy(CompilationUnit original, String source){
         setSourceRange(original.getStartPosition(), original.getLength());
         setModule((ModuleDeclaration) ASTNode.copySubtree(original.getAST(), original.getModule()));
         setPackage((PackageDeclaration) ASTNode.copySubtree(original.getAST(), original.getPackage()));
 		imports().addAll(ASTNode.copySubtrees(original.getAST(), original.imports()));
         types().addAll(ASTNode.copySubtrees(original.getAST(), original.types()));
-        updateSource(); //now the ast has been copied, update all source connections
+        setProblems(original.getProblems());
+        updateSource(source); //now the ast has been copied, update all source connections
     }
 
-    public void updateSource(){
-        icu.setSource(toString());
+    public void updateSource(String source){
+        icu.setSource(source);
     }
 
     @Override
