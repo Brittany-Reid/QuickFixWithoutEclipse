@@ -14,6 +14,9 @@ import org.eclipse.jdt.core.IOpenable;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.compiler.IProblem;
+import org.eclipse.jdt.internal.compiler.batch.Main;
+import org.eclipse.jdt.internal.compiler.batch.FileSystem.Classpath;
+import org.eclipse.jdt.internal.core.INameEnvironmentWithProgress;
 import org.eclipse.jdt.internal.ui.text.correction.ProblemLocation;
 import org.eclipse.jdt.ls.core.internal.corrections.proposals.CUCorrectionProposal;
 import org.eclipse.jdt.ls.core.internal.corrections.proposals.ChangeCorrectionProposal;
@@ -38,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.io.Writer;
 import java.io.File;
 import java.util.ArrayList;
@@ -52,6 +56,10 @@ import org.eclipse.jdt.ls.core.internal.JDTUtils;
 public class QuickFix{
     public static String classpath = "";
     public static String fileName = "default.java";
+    public static String[] classpathEntries = new String[] { "" };
+    public static String[] sourcepathEntries = new String[] { "" };
+    public static String[] encodings = new String[] { "UTF-8" };
+    public static boolean includeRunningVMBootclasspath = true;
 
     /**
      * Attempt to fix all errors.
@@ -139,11 +147,12 @@ public class QuickFix{
         parser.setCompilerOptions(options);
         parser.setKind(ASTParser.K_COMPILATION_UNIT);
         parser.setUnitName(fileName);
-        parser.setEnvironment(new String[] { classpath != null? classpath : "" },
-                new String[] { "" }, new String[] { "UTF-8" }, true);
+        parser.setEnvironment(classpathEntries,
+                sourcepathEntries, encodings, includeRunningVMBootclasspath);
         parser.setResolveBindings(true);
         CompilationUnit compilationUnit = (CompilationUnit) parser.createAST(null);
         CompilationUnitWrapper cuWrapper = new CompilationUnitWrapper(compilationUnit, code);
+        
         return cuWrapper;
     }
 
@@ -174,5 +183,33 @@ public class QuickFix{
         }
 
         return document;
+    }
+
+    public static List<Classpath> getClasspath(){
+        Main main = new Main(new PrintWriter(System.out), new PrintWriter(System.err), false/*systemExit*/, null/*options*/, null/*progress*/);
+        ArrayList<Classpath> allClasspaths = new ArrayList<Classpath>();
+        if(includeRunningVMBootclasspath) {
+            org.eclipse.jdt.internal.compiler.util.Util.collectRunningVMBootclasspath(allClasspaths);
+        }
+        if (sourcepathEntries != null) {
+            for (int i = 0, max = sourcepathEntries.length; i < max; i++) {
+                String encoding = encodings == null ? null : encodings[i];
+                main.processPathEntries(
+                        Main.DEFAULT_SIZE_CLASSPATH,
+                        allClasspaths, sourcepathEntries[i], encoding, true, false);
+            }
+        }
+        if (classpathEntries != null) {
+            for (int i = 0, max = classpathEntries.length; i < max; i++) {
+                main.processPathEntries(
+                        Main.DEFAULT_SIZE_CLASSPATH,
+                        allClasspaths, classpathEntries[i], null, false, false);
+            }
+        }
+        ArrayList<String> pendingErrors = main.pendingErrors;
+        if (pendingErrors != null && pendingErrors.size() != 0) {
+            throw new IllegalStateException("invalid environment settings"); //$NON-NLS-1$
+        }
+        return allClasspaths;
     }
 }

@@ -1,6 +1,7 @@
 package quickfixwithouteclipse;
 
 import org.eclipse.jdt.internal.core.JavaProject;
+import org.eclipse.jdt.internal.core.NameLookup;
 import org.eclipse.jdt.internal.core.SearchableEnvironment;
 
 import java.util.Map;
@@ -27,6 +28,11 @@ public class IJavaProjectWrapper extends JavaProject{
     public String getOption(String optionName, boolean inheritJavaCoreOptions){
         return JavaCore.getOption(JavaCore.COMPILER_SOURCE);
     }
+
+    // @Override
+    // public NameLookup newNameLookup(ICompilationUnit[] workingCopies, boolean excludeTestCode){
+    //     NameLookup nameLookup = new NameLookup(this, );
+    // }
 
     @Override
     public IClasspathEntry[] getResolvedClasspath() throws JavaModelException {

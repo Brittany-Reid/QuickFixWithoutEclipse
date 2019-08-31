@@ -12,9 +12,7 @@ public class Main{
 
         //this is the string we want to fix
         String code = "/**class Test*/\n"
-        + "import java.io.File;\n"
         + "import java.util.List;\n"
-        + "import java.util.ArrayList;\n"
         + "class Test{\n"
         + "int i=0;\n"
         + "//File file;\n"
